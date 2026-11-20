@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Strichliste</title>
+<meta name="theme-color" content="#f5f3f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Strichliste">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --bg: #f5f3f0; --card: #fff; --ink: #1d1b19; --muted: #7a746d; --line: #e7e2dc;
+    --red: #e0362c; --red-dark: #b82a21; --green: #1f9d55; --green-dark: #17803f;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 480px; margin: 0 auto; padding: calc(20px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom)); }
+  .laden { text-align: center; color: var(--muted); margin-top: 35vh; }
+  h1 { font-size: 22px; margin: 4px 0 16px; display: flex; justify-content: space-between; align-items: baseline; }
+  h1 a { font-size: 13px; font-weight: 400; color: var(--muted); }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 28px 0 10px; }
+
+  .konten { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .konto { background: var(--card); border-radius: 16px; padding: 14px 16px; border: 1px solid var(--line); }
+  .konto .wer { font-size: 13px; color: var(--muted); }
+  .konto .zahl { font-size: 36px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .konto.ich { border-color: var(--ink); }
+  .konto .zahl { color: var(--red); }
+  .konto .klein { font-size: 12px; color: var(--muted); }
+
+  .btn { display: block; width: 100%; border: 0; border-radius: 18px; color: #fff; font-weight: 700;
+    cursor: pointer; transition: transform .08s, background .15s; font-family: inherit; }
+  .btn:active { transform: scale(.97); }
+  .btn-rot { background: var(--red); font-size: 22px; padding: 28px 16px; margin-top: 18px;
+    box-shadow: 0 6px 0 var(--red-dark); }
+  .btn-gruen { background: var(--green); font-size: 16px; padding: 16px; margin-top: 18px;
+    box-shadow: 0 4px 0 var(--green-dark); }
+  .btn-gruen small { display: block; font-weight: 400; opacity: .9; font-size: 13px; }
+  .btn-danke { background: #fff6d6; color: #8a6300; font-size: 16px; padding: 14px; margin-top: 14px;
+    border: 1px solid #f1dc8f; }
+
+  .guthaben { background: var(--ink); color: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center; }
+  .guthaben .zahl { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .serie { font-size: 13px; color: #c2410c; font-weight: 600; }
+  .undo { border: 0; background: none; color: var(--red); font: inherit; font-size: 13px; font-weight: 600;
+    padding: 4px 0 0; cursor: pointer; }
+  .badge { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; margin-left: 4px; }
+  .badge.offen { background: #fff1e6; color: #c2410c; }
+  .badge.erledigt { background: #e8f6ee; color: var(--green-dark); }
+  .ok-gelb { background: #f5c518; color: #3a2c00; }
+
+  .woche { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
+  .woche .zeile { display: flex; justify-content: space-between; padding: 4px 0; }
+  .woche .urteil { font-size: 14px; color: var(--muted); }
+
+  .liste { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--line); }
+  .item:first-child { border-top: 0; }
+  .item .name { flex: 1; }
+  .item .r-icon { font-size: 22px; width: 36px; height: 36px; border-radius: 10px; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .item .preis { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mini { border: 0; border-radius: 10px; padding: 8px 12px; font: inherit; font-size: 14px; font-weight: 600;
+    background: var(--ink); color: #fff; cursor: pointer; }
+  .mini:disabled { background: var(--line); color: var(--muted); cursor: default; }
+
+  .log { font-size: 14px; }
+  .log .item { align-items: flex-start; }
+  .log .icon { font-size: 18px; line-height: 1.2; }
+  .log .text { flex: 1; }
+  .log .meta { color: var(--muted); font-size: 12px; }
+  .log .pkt { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .leer { padding: 14px; color: var(--muted); font-size: 14px; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: flex-end; z-index: 10; }
+  .overlay.offen { display: flex; }
+  .sheet { background: var(--card); width: 100%; max-width: 480px; margin: 0 auto; border-radius: 20px 20px 0 0;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); animation: hoch .2s ease-out; }
+  @keyframes hoch { from { transform: translateY(40px); opacity: 0; } }
+  .sheet h3 { margin: 0 0 12px; font-size: 18px; }
+  .sheet p { margin: 0 0 12px; color: var(--muted); }
+  textarea { width: 100%; min-height: 90px; border: 1px solid var(--line); border-radius: 12px; padding: 12px;
+    font: inherit; resize: vertical; }
+  .sheet .aktionen { display: flex; gap: 10px; margin-top: 12px; }
+  .sheet .aktionen button { flex: 1; border: 0; border-radius: 12px; padding: 14px; font: inherit; font-weight: 700; cursor: pointer; }
+  .abbrechen { background: var(--line); color: var(--ink); }
+  .ok-rot { background: var(--red); color: #fff; }
+  .ok-gruen { background: var(--green); color: #fff; }
+  .ok-dunkel { background: var(--ink); color: #fff; }
+  button[disabled] { opacity: .6; }
+
+  .toast { position: fixed; left: 50%; top: calc(12px + env(safe-area-inset-top)); transform: translate(-50%, -150%); background: var(--ink); color: #fff;
+    padding: 12px 18px; border-radius: 14px; font-weight: 600; z-index: 20; transition: transform .25s;
+    max-width: 90vw; text-align: center; }
+  .toast.zeigen { transform: translate(-50%, 0); }
+  .toast.fehler { background: var(--red); }
+
+  .wahl { display: grid; gap: 12px; margin-top: 30vh; }
+  .wahl button { font-family: inherit; width: 100%; cursor: pointer;
+  }
+  .wahl a, .wahl button { display: block; text-align: center; background: var(--card); border: 1px solid var(--line);
+    border-radius: 16px; padding: 22px; font-size: 20px; font-weight: 700; color: var(--ink); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet" id="sheet"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+  // ===================== EINSTELLUNGEN =====================
+  // Hier die Web-App-URL aus Apps Script eintragen (endet auf /exec):
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwuHVs5IeJd1IugYFqf3B_Xzf6lWjz0HQAyW3VIxYGVRrIet-1suSt5Sz2guMTrLOdvjA/exec';
+  const PERSONEN = ['Jannik', 'Jessica'];
+  // ==========================================================
+
+  let ME = wer();
+  let state = null;
+  let pending = 0;
+  let BOOT = { strich: 1, gestaendnis: 10, danke: 0 };
+
+  const $ = (tag, attrs, ...kids) => {
+    const el = document.createElement(tag);
+    Object.entries(attrs || {}).forEach(([k, v]) => {
+      if (k === 'class') el.className = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else if (v !== false && v != null) el.setAttribute(k, v === true ? '' : v);
+    });
+    kids.flat().filter(k => k != null && k !== false).forEach(k => el.append(k instanceof Node ? k : document.createTextNode(String(k))));
+    return el;
+  };
+
+  // ---------- Speicher auf dem Handy (wer bin ich + letzter Stand für schnellen Start) ----------
+  function lies(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function schreib(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+
+  function wer() {
+    const p = new URLSearchParams(location.search).get('user');
+    if (PERSONEN.includes(p)) { schreib('strichliste-user', p); return p; }
+    const s = lies('strichliste-user');
+    return PERSONEN.includes(s) ? s : '';
+  }
+
+  // ---------- Verbindung zum Apps Script ----------
+  async function api(action, args) {
+    if (!/^https:\/\/script\.google\.com\//.test(API_URL)) throw new Error('API_URL ist noch nicht eingetragen.');
+    let res;
+    try {
+      res = await fetch(API_URL, {
+        method: 'POST',
+        // text/plain vermeidet die CORS-Vorabfrage, die Apps Script nicht beantwortet
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, user: ME, args: args == null ? [] : [].concat(args) }),
+      });
+    } catch (e) {
+      throw new Error('Keine Verbindung – bist du online?');
+    }
+    let data;
+    try { data = await res.json(); } catch (e) { throw new Error('Unerwartete Antwort vom Script (Bereitstellung prüfen).'); }
+    if (!data.ok) throw new Error(data.error || 'Unbekannter Fehler');
+    return data.state;
+  }
+
+  function uebernehmen(s) {
+    state = s;
+    if (s.config) BOOT = s.config;
+    schreib('strichliste-state-' + ME, JSON.stringify(s));
+    render();
+  }
+
+  // ---------- Start ----------
+  function start() {
+    ME = wer();
+    if (!ME) return wahl();
+    const cache = lies('strichliste-state-' + ME);
+    if (cache) { try { state = JSON.parse(cache); if (state.config) BOOT = state.config; render(); } catch (e) {} }
+    if (!state) document.getElementById('app').replaceChildren($('div', { class: 'laden' }, 'Lade …'));
+    laden(!!state);
+  }
+
+  function wahl() {
+    document.getElementById('app').replaceChildren(
+      $('div', { class: 'wahl' },
+        $('h1', {}, 'Wer bist du?'),
+        PERSONEN.map(p => $('button', { onclick: () => { schreib('strichliste-user', p); start(); } }, p))
+      )
+    );
+  }
+
+  function wechseln() {
+    schreib('strichliste-user', null);
+    if (location.search) history.replaceState(null, '', location.pathname);
+    state = null; ME = '';
+    wahl();
+  }
+
+  function laden(still) {
+    api('getState')
+      .then(s => { if (!pending) uebernehmen(s); })
+      .catch(e => { if (!still) toast(e.message, true); });
+  }
+
+  setInterval(() => { if (ME && !document.hidden && !pending) laden(true); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (ME && !document.hidden && !pending) laden(true); });
+
+  // ---------- Hauptansicht ----------
+  function render() {
+    const s = state, andere = s.andere;
+    const app = document.getElementById('app');
+    app.replaceChildren(...[
+      $('h1', {}, 'Hi ' + ME + ' 👋',
+        $('a', { href: '#', onclick: (ev) => { ev.preventDefault(); wechseln(); } }, 'nicht ' + ME + '?')),
+
+      $('div', { class: 'konten' },
+        [[ME, 'Deine Striche', 'konto ich'], [andere, andere + 's Striche', 'konto']].map(([p, label, cls]) =>
+          $('div', { class: cls },
+            $('div', { class: 'wer' }, label),
+            $('div', { class: 'zahl' }, s.striche[p]),
+            $('div', { class: 'klein' }, 'diese Woche ' + s.woche.personen[p].diese),
+            $('div', { class: 'klein' }, 'Guthaben ' + s.saldo[p] + ' ✗')))
+      ),
+
+      $('button', { class: 'btn btn-rot', onclick: () => sheetStrich(andere) }, '＋ Strich tracken'),
+      $('button', { class: 'btn btn-gruen', onclick: () => sheetGestaendnis(andere) },
+        'Ich hab Mist gebaut 🙈', $('small', {}, '+' + BOOT.gestaendnis + ' Striche für ' + andere)),
+      $('button', { class: 'btn btn-danke', onclick: () => sheetDanke(andere) }, '💛 Danke sagen'),
+
+      s.offen.length ? [
+        $('h2', {}, 'Offen'),
+        $('div', { class: 'liste' }, s.offen.map(o => {
+          const ichLiefere = o.gegen === ME;
+          return $('div', { class: 'item' },
+            $('span', { class: 'r-icon' }, iconFuer(o.name)),
+            $('div', { class: 'name' },
+              $('div', {}, o.name),
+              $('div', { class: 'meta', style: 'color:var(--muted);font-size:12px' },
+                (ichLiefere ? 'Du lieferst an ' + o.von : o.gegen + ' liefert') + ' · ' + seit(o.tage))),
+            o.row && $('button', { class: 'mini', onclick: (ev) => senden('markDone', [o.row, o.ts], ev.currentTarget, '✅ Erledigt!', s => {
+              s.offen = s.offen.filter(x => x !== o && x.ts !== o.ts);
+              s.verlauf.forEach(v => { if (v.ts === o.ts) v.status = 'erledigt'; });
+            }) }, 'Erledigt ✓'));
+        }))
+      ] : [],
+
+      $('h2', {}, 'Diese Woche (' + s.woche.label + ')'),
+      $('div', { class: 'woche' },
+        PERSONEN.map(p => {
+          const w = s.woche.personen[p];
+          return $('div', {},
+            $('div', { class: 'zeile' },
+              $('strong', {}, p),
+              $('span', {}, w.diese + ' kassiert · Vorwoche ' + w.vorher)),
+            $('div', { class: 'urteil' }, w.urteil),
+            (w.danke || w.serie >= 2) ? $('div', { class: 'serie' },
+              [w.danke ? '💛 ' + w.danke + '× Danke' : '', w.serie >= 2 ? '🔥 ' + w.serie + ' Wochen in Folge' : '']
+                .filter(Boolean).join(' · ')) : '');
+        })
+      ),
+
+      $('h2', {}, 'Einlösen'),
+      $('div', { class: 'guthaben' },
+        $('span', {}, 'Dein Guthaben'),
+        $('span', { class: 'zahl' }, s.saldo[ME] + ' ✗')),
+      $('div', { class: 'liste' },
+        s.belohnungen.length ? s.belohnungen.map(b =>
+          $('div', { class: 'item' },
+            $('span', { class: 'r-icon' }, b.icon),
+            $('span', { class: 'name' }, b.name),
+            $('span', { class: 'preis' }, b.kosten + ' ✗'),
+            $('button', { class: 'mini', disabled: s.saldo[ME] < b.kosten, onclick: () => sheetEinloesen(b, andere) }, 'Einlösen'))
+        ) : $('div', { class: 'leer' }, 'Noch keine Belohnungen im Sheet.')
+      ),
+
+      $('h2', {}, 'Verlauf'),
+      $('div', { class: 'liste log' },
+        s.verlauf.length ? s.verlauf.map(eintrag) : $('div', { class: 'leer' }, 'Noch nichts passiert – weiter so! 😇')
+      )
+
+    ].flat());
+  }
+
+  function iconFuer(name) {
+    const b = state.belohnungen.find(x => x.name === name);
+    return b ? b.icon : '🎁';
+  }
+  function seit(tage) { return tage === 0 ? 'seit heute' : tage === 1 ? 'seit gestern' : 'seit ' + tage + ' Tagen'; }
+
+  function eintrag(e) {
+    let icon, titel, badge = '';
+    if (e.typ === 'Strich') { icon = '🔴'; titel = e.von + ' trackt Strich gegen ' + e.gegen; }
+    else if (e.typ === 'Geständnis') { icon = '🟢'; titel = e.von + ' sieht es ein → ' + e.fuer; }
+    else if (e.typ === 'Danke') { icon = '💛'; titel = e.von + ' sagt Danke an ' + e.fuer; }
+    else {
+      icon = iconFuer(e.notiz); titel = e.von + ' löst ein: ' + e.notiz;
+      const erledigt = e.status === 'erledigt';
+      badge = $('span', { class: 'badge ' + (erledigt ? 'erledigt' : 'offen') }, erledigt ? 'erledigt' : 'offen');
+    }
+    const pkt = e.striche ? (e.striche > 0 ? '+' : '') + e.striche : '';
+    return $('div', { class: 'item' },
+      $('span', { class: 'icon' }, icon),
+      $('div', { class: 'text' },
+        $('div', {}, titel, badge),
+        e.typ !== 'Einlösung' && e.notiz ? $('div', {}, '„' + e.notiz + '“') : '',
+        $('div', { class: 'meta' }, e.zeit),
+        e.undo ? $('button', { class: 'undo', onclick: (ev) => senden('undo', [e.row, e.ts], ev.currentTarget, '↩️ Zurückgenommen', s => {
+          s.verlauf = s.verlauf.filter(v => v.ts !== e.ts);
+        }) }, '↩︎ Rückgängig') : ''),
+      $('span', { class: 'pkt' }, pkt));
+  }
+
+  // ---------- Bottom-Sheets ----------
+  function oeffnen(...inhalt) {
+    document.getElementById('sheet').replaceChildren(...inhalt);
+    document.getElementById('overlay').classList.add('offen');
+    const ta = document.querySelector('#sheet textarea');
+    if (ta) setTimeout(() => ta.focus(), 50);
+  }
+  function schliessen() { document.getElementById('overlay').classList.remove('offen'); }
+  document.getElementById('overlay').addEventListener('click', e => { if (e.target.id === 'overlay') schliessen(); });
+
+  function sheetStrich(andere) {
+    const ta = $('textarea', { placeholder: 'Was hat ' + andere + ' gemacht?', maxlength: 300 });
+    const ok = $('button', { class: 'ok-rot', onclick: () => {
+      const notiz = pflicht(ta.value, 'Bitte kurz schreiben, was passiert ist.'); if (!notiz) return;
+      senden('addStrike', notiz, ok, '🔴 Strich gegen ' + andere + ' getrackt', s => {
+        s.striche[andere] += BOOT.strich; s.saldo[ME] += BOOT.strich; s.woche.personen[andere].diese += BOOT.strich;
+        neu(s, { typ: 'Strich', von: ME, gegen: andere, fuer: ME, striche: BOOT.strich, notiz });
+      });
+    } }, 'Tracken');
+    oeffnen($('h3', {}, 'Strich gegen ' + andere), ta,
+      $('div', { class: 'aktionen' }, $('button', { class: 'abbrechen', onclick: schliessen }, 'Abbrechen'), ok));
+  }
+
+  function sheetGestaendnis(andere) {
+    const ta = $('textarea', { placeholder: 'Was siehst du ein?', maxlength: 300 });
+    const ok = $('button', { class: 'ok-gruen', onclick: () => {
+      const notiz = pflicht(ta.value, 'Bitte kurz schreiben, was du einsiehst.'); if (!notiz) return;
+      senden('confess', notiz, ok, '🟢 ' + andere + ' bekommt ' + BOOT.gestaendnis + ' Striche', s => {
+        s.saldo[andere] += BOOT.gestaendnis; s.woche.personen[ME].gestaendnisse++;
+        neu(s, { typ: 'Geständnis', von: ME, gegen: ME, fuer: andere, striche: BOOT.gestaendnis, notiz });
+      });
+    } }, '+' + BOOT.gestaendnis + ' geben');
+    oeffnen($('h3', {}, 'Grobes Fehlverhalten einsehen'),
+      $('p', {}, andere + ' bekommt dafür ' + BOOT.gestaendnis + ' Striche gutgeschrieben.'), ta,
+      $('div', { class: 'aktionen' }, $('button', { class: 'abbrechen', onclick: schliessen }, 'Abbrechen'), ok));
+  }
+
+  function sheetDanke(andere) {
+    const ta = $('textarea', { placeholder: 'Wofür? (optional)', maxlength: 300 });
+    const ok = $('button', { class: 'ok-gelb', onclick: () => {
+      const notiz = ta.value.trim();
+      senden('thank', notiz, ok, '💛 Danke an ' + andere + ' geschickt', s => {
+        s.saldo[andere] += BOOT.danke; s.woche.personen[andere].danke++;
+        neu(s, { typ: 'Danke', von: ME, gegen: '', fuer: andere, striche: BOOT.danke, notiz });
+      });
+    } }, 'Danke senden');
+    oeffnen($('h3', {}, 'Danke an ' + andere),
+      BOOT.danke ? $('p', {}, andere + ' bekommt dafür ' + BOOT.danke + (BOOT.danke === 1 ? ' Strich.' : ' Striche.')) : '',
+      ta,
+      $('div', { class: 'aktionen' }, $('button', { class: 'abbrechen', onclick: schliessen }, 'Abbrechen'), ok));
+  }
+
+  function sheetEinloesen(b, andere) {
+    const ok = $('button', { class: 'ok-dunkel', onclick: () => senden('redeem', b.name, ok, b.icon + ' ' + b.name + ' eingelöst!', s => {
+      s.saldo[ME] -= b.kosten;
+      s.offen.unshift({ name: b.name, von: ME, gegen: andere, tage: 0 });
+      neu(s, { typ: 'Einlösung', von: ME, gegen: andere, fuer: ME, striche: -b.kosten, notiz: b.name, status: 'offen' });
+    }) }, 'Einlösen');
+    oeffnen($('h3', {}, b.icon + ' ' + b.name + ' einlösen?'),
+      $('p', {}, 'Kostet ' + b.kosten + ' Striche. Danach hast du noch ' + (state.saldo[ME] - b.kosten) + '. ' + andere + ' bekommt eine Nachricht.'),
+      $('div', { class: 'aktionen' }, $('button', { class: 'abbrechen', onclick: schliessen }, 'Abbrechen'), ok));
+  }
+
+  // Optimistisch: sofort anzeigen, im Hintergrund speichern, danach mit dem Server abgleichen.
+  function senden(fn, args, knopf, erfolg, patch) {
+    if (knopf) knopf.disabled = true;
+    const s = JSON.parse(JSON.stringify(state));
+    patch(s);
+    state = s; render(); schliessen(); toast(erfolg);
+    pending++;
+    api(fn, args)
+      .then(neuerState => { pending--; if (!pending) uebernehmen(neuerState); })
+      .catch(e => { pending--; toast(e.message, true); laden(true); });
+  }
+
+  function neu(s, e) {
+    s.verlauf.unshift(Object.assign({ zeit: 'gerade eben', status: '', undo: false }, e));
+  }
+
+  function pflicht(text, meldung) {
+    const t = text.trim();
+    if (!t) toast(meldung, true);
+    return t;
+  }
+
+  // ---------- Toast ----------
+  let toastTimer;
+  function toast(text, fehler) {
+    const t = document.getElementById('toast');
+    t.textContent = text.replace(/^Exception:\s*/, '').replace(/^Error:\s*/, '');
+    t.classList.toggle('fehler', !!fehler);
+    t.classList.add('zeigen');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('zeigen'), 2600);
+  }
+
+  start();
+</script>
+</body>
+</html>
